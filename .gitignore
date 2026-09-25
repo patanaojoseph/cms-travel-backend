@@ -1,0 +1,9 @@
+# Environment files (Contains secret keys and connection strings)
+config/config.env
+.env
+.env.local
+.env.*.local
+
+# Node modules & Logs
+node_modules/
+npm-debug.log*
