@@ -278,12 +278,24 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
 // 7. Data Sanitization against NoSQL Query Injection (Fixed req.query read-only error)
-app.use(
-  mongoSanitize({
-    replaceWith: "_",
-    allowQueries: true,
-  }),
-);
+app.use((req, res, next) => {
+  const sanitize = (obj) => {
+    if (!obj || typeof obj !== "object") return;
+    for (const key in obj) {
+      if (key.startsWith("$") || key.includes(".")) {
+        delete obj[key];
+      } else if (typeof obj[key] === "object") {
+        sanitize(obj[key]);
+      }
+    }
+  };
+
+  // Sanitize mutatable incoming data only
+  if (req.body) sanitize(req.body);
+  if (req.params) sanitize(req.params);
+
+  next();
+});
 
 // Database Connection Function
 const connectDB = async () => {
