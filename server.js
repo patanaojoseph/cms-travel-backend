@@ -202,7 +202,7 @@ dotenv.config({ path: path.resolve(__dirname, "config", "config.env") });
 
 // Initialize Express App
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 // Trust First Proxy (Required for Reverse Proxies like Render, Railway, Nginx)
 app.set("trust proxy", 1);
