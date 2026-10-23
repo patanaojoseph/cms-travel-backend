@@ -83,18 +83,6 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
-// app.use(
-//   cors({
-//     origin: function (origin, callback) {
-//       if (!origin || allowedOrigins.includes(origin)) {
-//         callback(null, true);
-//       } else {
-//         callback(new Error("CORS policy violation: Access denied"));
-//       }
-//     },
-//     credentials: true,
-//   }),
-// );
 app.use(
   cors({
     origin:
