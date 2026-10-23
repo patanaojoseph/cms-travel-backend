@@ -1,15 +1,15 @@
 import { z } from "zod";
 
-const imageSchema = z.object({
+const mediaSchema = z.object({
   public_id: z.string({ required_error: "Public ID is required" }),
-  url: z.string({ required_error: "URL is required" }).url("Invalid image URL"),
+  url: z.string({ required_error: "URL is required" }).url("Invalid media URL"),
 });
 
 export const createHeroSchema = z.object({
   title: z
-    .string({ required_error: "Please provide a slide title" })
+    .string({ required_error: "Please provide a headline title" })
     .trim()
-    .min(1, "Please provide a slide title")
+    .min(1, "Please provide a headline title")
     .max(100, "Title cannot exceed 100 characters"),
 
   subtitle: z
@@ -24,11 +24,19 @@ export const createHeroSchema = z.object({
     .max(500, "Description cannot exceed 500 characters")
     .optional(),
 
-  image: imageSchema,
+  mediaType: z
+    .enum(["video", "image"], {
+      errorMap: () => ({
+        message: "Media type must be either 'video' or 'image'",
+      }),
+    })
+    .default("video"),
 
-  ctaLink: z.string().trim().optional(),
+  media: mediaSchema,
 
-  ctaText: z.string().trim().default("Explore Spot"),
+  ctaLink: z.string().trim().optional().default("#plan"),
+
+  ctaText: z.string().trim().optional().default("Explore Destinations"),
 
   order: z.number().int().default(0),
 
@@ -36,5 +44,5 @@ export const createHeroSchema = z.object({
 });
 
 export const updateHeroSchema = createHeroSchema.partial().extend({
-  image: imageSchema.partial().optional(),
+  media: mediaSchema.partial().optional(),
 });

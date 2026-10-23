@@ -1,13 +1,16 @@
-import Hero from "../models/Hero.js";
-import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
-import errorHandler from "../utils/errorHandler.js";
-import cloudinary from "cloudinary";
+// import Hero from "../models/Hero.js";
+// import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
+// import errorHandler from "../utils/errorHandler.js";
+// import cloudinary from "cloudinary";
 
-// // @desc    Get active hero slides for public homepage
+// // @desc    Get active hero slides for public view
 // // @route   GET /api/v1/heroes
 // // @access  Public
 // export const getActiveHeroes = catchAsyncErrors(async (req, res, next) => {
-//   const heroes = await Hero.find({ isActive: true }).sort({ order: 1 });
+//   const heroes = await Hero.find({ isActive: true }).sort({
+//     order: 1,
+//     createdAt: -1,
+//   });
 
 //   res.status(200).json({
 //     success: true,
@@ -16,11 +19,11 @@ import cloudinary from "cloudinary";
 //   });
 // });
 
-// // @desc    Get all hero slides (Admin view, includes inactive)
+// // @desc    Get all hero slides for admin management
 // // @route   GET /api/v1/heroes/admin
 // // @access  Private/Admin
 // export const getAllHeroesAdmin = catchAsyncErrors(async (req, res, next) => {
-//   const heroes = await Hero.find().sort({ order: 1 });
+//   const heroes = await Hero.find().sort({ order: 1, createdAt: -1 });
 
 //   res.status(200).json({
 //     success: true,
@@ -29,37 +32,11 @@ import cloudinary from "cloudinary";
 //   });
 // });
 
-// // @desc    Create a new hero slide
+// // @desc    Create new hero slide
 // // @route   POST /api/v1/heroes
 // // @access  Private/Admin
 // export const createHero = catchAsyncErrors(async (req, res, next) => {
-//   const {
-//     title,
-//     subtitle,
-//     description,
-//     ctaLink,
-//     ctaText,
-//     order,
-//     isActive,
-//     image,
-//   } = req.body;
-
-//   if (!image || !image.url || !image.public_id) {
-//     return next(
-//       new errorHandler("Please provide an image with public_id and url", 400),
-//     );
-//   }
-
-//   const hero = await Hero.create({
-//     title,
-//     subtitle,
-//     description,
-//     ctaLink,
-//     ctaText,
-//     order,
-//     isActive,
-//     image,
-//   });
+//   const hero = await Hero.create(req.body);
 
 //   res.status(201).json({
 //     success: true,
@@ -78,13 +55,6 @@ import cloudinary from "cloudinary";
 //     return next(new errorHandler("Hero slide not found", 404));
 //   }
 
-//   // If a new image is provided, clean up the old image from Cloudinary
-//   if (req.body.image && req.body.image.public_id !== hero.image.public_id) {
-//     if (hero.image.public_id) {
-//       await cloudinary.v2.uploader.destroy(hero.image.public_id);
-//     }
-//   }
-
 //   hero = await Hero.findByIdAndUpdate(req.params.id, req.body, {
 //     new: true,
 //     runValidators: true,
@@ -97,7 +67,7 @@ import cloudinary from "cloudinary";
 //   });
 // });
 
-// // @desc    Delete hero slide
+// // @desc    Delete hero slide (Includes Cloudinary image cleanup)
 // // @route   DELETE /api/v1/heroes/:id
 // // @access  Private/Admin
 // export const deleteHero = catchAsyncErrors(async (req, res, next) => {
@@ -107,8 +77,8 @@ import cloudinary from "cloudinary";
 //     return next(new errorHandler("Hero slide not found", 404));
 //   }
 
-//   // Delete image from Cloudinary
-//   if (hero.image && hero.image.public_id) {
+//   // Delete associated Cloudinary image
+//   if (hero.image?.public_id) {
 //     await cloudinary.v2.uploader.destroy(hero.image.public_id);
 //   }
 
@@ -119,6 +89,11 @@ import cloudinary from "cloudinary";
 //     message: "Hero slide deleted successfully",
 //   });
 // });
+
+import Hero from "../models/Hero.js";
+import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
+import errorHandler from "../utils/errorHandler.js";
+import cloudinary from "cloudinary";
 
 // @desc    Get active hero slides for public view
 // @route   GET /api/v1/heroes
@@ -162,7 +137,7 @@ export const createHero = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-// @desc    Update hero slide
+// @desc    Update hero slide (with Cloudinary media cleanup on replacement)
 // @route   PUT /api/v1/heroes/:id
 // @access  Private/Admin
 export const updateHero = catchAsyncErrors(async (req, res, next) => {
@@ -170,6 +145,17 @@ export const updateHero = catchAsyncErrors(async (req, res, next) => {
 
   if (!hero) {
     return next(new errorHandler("Hero slide not found", 404));
+  }
+
+  // Delete old Cloudinary asset if new media is uploaded
+  if (
+    req.body.media?.public_id &&
+    req.body.media.public_id !== hero.media?.public_id
+  ) {
+    const resourceType = hero.mediaType === "video" ? "video" : "image";
+    await cloudinary.v2.uploader.destroy(hero.media.public_id, {
+      resource_type: resourceType,
+    });
   }
 
   hero = await Hero.findByIdAndUpdate(req.params.id, req.body, {
@@ -184,7 +170,7 @@ export const updateHero = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-// @desc    Delete hero slide (Includes Cloudinary image cleanup)
+// @desc    Delete hero slide (Includes Cloudinary media cleanup)
 // @route   DELETE /api/v1/heroes/:id
 // @access  Private/Admin
 export const deleteHero = catchAsyncErrors(async (req, res, next) => {
@@ -194,9 +180,12 @@ export const deleteHero = catchAsyncErrors(async (req, res, next) => {
     return next(new errorHandler("Hero slide not found", 404));
   }
 
-  // Delete associated Cloudinary image
-  if (hero.image?.public_id) {
-    await cloudinary.v2.uploader.destroy(hero.image.public_id);
+  // Destroy Cloudinary asset based on resource_type (video vs image)
+  if (hero.media?.public_id) {
+    const resourceType = hero.mediaType === "video" ? "video" : "image";
+    await cloudinary.v2.uploader.destroy(hero.media.public_id, {
+      resource_type: resourceType,
+    });
   }
 
   await hero.deleteOne();
