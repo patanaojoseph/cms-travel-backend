@@ -79,7 +79,7 @@ app.use("/api/v1/", globalLimiter);
 // 5. Dynamic CORS Configuration (Supports local dev + production origins)
 const allowedOrigins = [
   "http://localhost:5173",
-  "http://localhost:3000",
+  "http://localhost:5000",
   process.env.CLIENT_URL,
   process.env.FRONTEND_URL,
 ].filter(Boolean);
