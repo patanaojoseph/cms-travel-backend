@@ -81,13 +81,20 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 app.use(
   cors({
-    origin:
-      process.env.FRONTEND_URL || "https://cms-geriatric-client.vercel.app",
-    credentials: true, // Importante para sa cookies/auth
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. Postman) or matching allowedOrigins
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS error: Origin ${origin} not allowed`));
+      }
+    },
+    credentials: true, // Crucial for cross-site HttpOnly cookies
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
