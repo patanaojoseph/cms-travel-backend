@@ -32,17 +32,9 @@ const PORT = process.env.PORT || 4000;
 app.set("trust proxy", 1);
 
 // 1. Security Headers (Configured for Cross-Origin Media Support)
-// app.use(
-//   helmet({
-//     crossOriginResourcePolicy: { policy: "cross-origin" },
-//   }),
-// );
 app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "https://cms-travel-client.vercel.app",
-    credentials: true, // Importante para sa cookies/auth
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   }),
 );
 
@@ -91,16 +83,25 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       if (!origin || allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("CORS policy violation: Access denied"));
+//       }
+//     },
+//     credentials: true,
+//   }),
+// );
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS policy violation: Access denied"));
-      }
-    },
-    credentials: true,
+    origin:
+      process.env.FRONTEND_URL || "https://cms-geriatric-client.vercel.app",
+    credentials: true, // Importante para sa cookies/auth
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
