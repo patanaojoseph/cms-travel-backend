@@ -36,6 +36,32 @@ export const getAllHeroesAdmin = catchAsyncErrors(async (req, res, next) => {
 // @route   POST /api/v1/heroes
 // @access  Private/Admin
 export const createHero = catchAsyncErrors(async (req, res, next) => {
+  // const hero = await Hero.create(req.body);
+  // res.status(201).json({
+  //   success: true,
+  //   message: "Hero slide created successfully",
+  //   data: hero,
+  // });
+
+  const { title, media } = req.body;
+
+  // Check if a hero slide with the exact same title or media public_id already exists
+  const existingHero = await Hero.findOne({
+    $or: [
+      { title: { $regex: new RegExp(`^${title}$`, "i") } }, // Case-insensitive title match
+      ...(media?.public_id ? [{ "media.public_id": media.public_id }] : []),
+    ],
+  });
+
+  if (existingHero) {
+    return next(
+      new errorHandler(
+        "A hero slide with this title or media asset already exists.",
+        400,
+      ),
+    );
+  }
+
   const hero = await Hero.create(req.body);
 
   res.status(201).json({
